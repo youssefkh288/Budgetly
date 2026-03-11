@@ -64,7 +64,7 @@ class BudgetBox extends StatelessWidget {
                     child: Text(
                       'Edit',
                       style: TextStyle(
-                        color: ColorManager.darkerBlue,
+                        color: ColorManager.blueColor,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
