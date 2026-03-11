@@ -1,9 +1,14 @@
 import 'package:budgetly/core/color_manager.dart';
+import 'package:budgetly/cubits/expenses/expenses_cubit.dart';
+import 'package:budgetly/cubits/expenses/expenses_state.dart';
+import 'package:budgetly/models/category.dart';
 import 'package:budgetly/models/expenses.dart';
 import 'package:budgetly/widgets/budget_box.dart';
 import 'package:budgetly/widgets/custom_button.dart';
 import 'package:budgetly/widgets/custom_text_field.dart';
+import 'package:budgetly/widgets/expense_tile.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,33 +21,19 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController amountController = TextEditingController();
   final TextEditingController titleController = TextEditingController();
 
-  final List<Map<String, dynamic>> categories = [
-    {'name': 'Food', 'icon': Icons.restaurant, 'color': Colors.orange},
-    {'name': 'Transport', 'icon': Icons.directions_bus, 'color': Colors.blue},
-    {'name': 'Shopping', 'icon': Icons.shopping_bag, 'color': Colors.purple},
-    {
-      'name': 'Health',
-      'icon': Icons.medical_services,
-      'color': Colors.redAccent,
-    },
-    {
-      'name': 'Other',
-      'icon': Icons.miscellaneous_services,
-      'color': Colors.blueGrey,
-    },
-  ];
-
-  int selectedCategoryIndex = 4;
-
-  List<Expenses> expenses = [
-    Expenses(
-      amount: 30,
-      title: 'Lunch',
-      date: DateTime.now(),
-      icon: Icons.restaurant,
-      color: Colors.orange,
+  List<Category> categories = [
+    Category(name: "Food", icon: Icons.restaurant, color: Colors.orange),
+    Category(name: "Transport", icon: Icons.directions_bus, color: Colors.blue),
+    Category(name: "Shopping", icon: Icons.shopping_bag, color: Colors.purple),
+    Category(name: "Health", icon: Icons.medical_services, color: Colors.red),
+    Category(
+      name: "Other",
+      icon: Icons.miscellaneous_services,
+      color: Colors.grey,
     ),
   ];
+  int selectedCategoryIndex = 4;
+
   @override
   void dispose() {
     amountController.dispose();
@@ -75,12 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     var cat = entry.value;
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: cat['color'].withOpacity(0.2),
-                        child: Icon(cat['icon'], color: cat['color']),
+                        backgroundColor: cat.color.withValues(alpha: 0.2),
+                        child: Icon(cat.icon, color: cat.color),
                       ),
-                      title: Text(cat['name']),
+                      title: Text(cat.name),
                       trailing: selectedCategoryIndex == idx
-                          ? Icon(Icons.check_circle, color: cat['color'])
+                          ? Icon(Icons.check_circle, color: cat.color)
                           : null,
                       onTap: () {
                         setState(() => selectedCategoryIndex = idx);
@@ -194,13 +185,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Row(
                             children: [
                               Icon(
-                                categories[selectedCategoryIndex]['icon'],
-                                color:
-                                    categories[selectedCategoryIndex]['color'],
+                                categories[selectedCategoryIndex].icon,
+                                color: categories[selectedCategoryIndex].color,
                                 size: 26,
                               ),
                               Text(
-                                '   ${categories[selectedCategoryIndex]['name']}',
+                                '   ${categories[selectedCategoryIndex].name}',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -221,23 +211,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           onPressed: () {
                             if (amountController.text.isNotEmpty &&
                                 titleController.text.isNotEmpty) {
-                              setState(() {
-                                expenses.insert(
-                                  0,
-                                  Expenses(
-                                    amount: double.parse(amountController.text),
-                                    title: titleController.text,
-                                    date: DateTime.now(),
-                                    icon:
-                                        categories[selectedCategoryIndex]['icon'],
-                                    color:
-                                        categories[selectedCategoryIndex]['color'],
-                                  ),
-                                );
-                                amountController.clear();
-                                titleController.clear();
-                                FocusScope.of(context).unfocus();
-                              });
+                              context.read<ExpenseCubit>().addExpense(
+                                Expenses(
+                                  amount: double.parse(amountController.text),
+                                  title: titleController.text,
+                                  date: DateTime.now(),
+                                  icon: categories[selectedCategoryIndex].icon,
+                                  color:
+                                      categories[selectedCategoryIndex].color,
+                                ),
+                              );
                             }
                           },
                         ),
@@ -275,44 +258,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 12),
 
-              expenses.isEmpty
-                  ? const Padding(
+              BlocBuilder<ExpenseCubit, ExpenseState>(
+                builder: (context, state) {
+                  if (state.expenses.isEmpty) {
+                    return const Padding(
                       padding: EdgeInsets.all(40),
-                      child: Text(
-                        "No expenses yet!",
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: expenses.length,
-                      itemBuilder: (context, index) {
-                        final item = expenses[index];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: item.color.withValues(alpha: 0.15),
-                            child: Icon(item.icon, color: item.color, size: 26),
-                          ),
-                          title: Text(
-                            item.title,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          subtitle: Text("${item.date.day}/${item.date.month}"),
-                          trailing: Text(
-                            "-${item.amount} EGP",
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                      child: Text("No expenses yet!"),
+                    );
+                  }
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: state.expenses.length,
+                    itemBuilder: (context, index) {
+                      final item = state.expenses[index];
+                      return ExpenseTile(expense: item);
+                    },
+                  );
+                },
+              ),
               const SizedBox(height: 20),
             ],
           ),

@@ -1,4 +1,5 @@
-import 'package:budgetly/cubits/splash_cubit.dart';
+import 'package:budgetly/cubits/expenses/expenses_cubit.dart';
+import 'package:budgetly/cubits/splash/splash_cubit.dart';
 import 'package:budgetly/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,12 +13,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Budgetly',
-      debugShowCheckedModeBanner: false,
-      home: BlocProvider(
-        create: (context) => SplashCubit(),
-        child: SplashScreen(),
+    return MultiBlocProvider(
+      providers: [BlocProvider(create: (_) => ExpenseCubit())],
+      child: MaterialApp(
+        title: 'Budgetly',
+        debugShowCheckedModeBanner: false,
+        home: BlocProvider(
+          create: (context) => SplashCubit(),
+          child: SplashScreen(),
+        ),
       ),
     );
   }

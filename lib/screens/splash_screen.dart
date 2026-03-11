@@ -1,4 +1,4 @@
-import 'package:budgetly/cubits/splash_cubit.dart';
+import 'package:budgetly/cubits/splash/splash_cubit.dart';
 import 'package:budgetly/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
